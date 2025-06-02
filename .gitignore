@@ -18,3 +18,6 @@ venv/
 
 # Requirements
 requirements.txt
+
+# Mac
+.DS_Store
