@@ -5,16 +5,21 @@ RUN apt-get update && apt-get install -y \
     libpcap-dev \
     tcpdump \
     net-tools \
+    build-essential \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
+# Upgrade pip and install wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
 # Copy requirements first for better cache usage
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies with verbose output for debugging
+RUN pip install --no-cache-dir --verbose -r requirements.txt
 
 # Copy application code
 COPY . .

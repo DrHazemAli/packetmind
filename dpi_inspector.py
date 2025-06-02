@@ -34,7 +34,7 @@ from typing import Dict, Any, Optional, Tuple
 # Third-party libraries:
 from dotenv import load_dotenv
 from scapy.all import sniff, IP, TCP, UDP, Raw
-from azure.ai.openai import OpenAIClient, OpenAIKeyCredential
+from openai import AzureOpenAI
 from logging.handlers import RotatingFileHandler
 from concurrent.futures import ThreadPoolExecutor
 
@@ -178,8 +178,11 @@ logger.addHandler(file_handler)
 # ────────────────────────────────────────────────────────────────────────────────
 
 try:
-    credential = OpenAIKeyCredential(AZURE_API_KEY)
-    ai_client = OpenAIClient(AZURE_ENDPOINT, credential)
+    ai_client = AzureOpenAI(
+        api_key=AZURE_API_KEY,
+        api_version="2024-02-01",
+        azure_endpoint=AZURE_ENDPOINT
+    )
     logger.info("✅ Initialized Azure AI LLM client.")
 except Exception as e:
     logger.error(f"[!] Failed to initialize Azure AI client: {e}")
@@ -360,8 +363,8 @@ PAYLOAD:
 ```
 """
     try:
-        response = ai_client.get_chat_completions(
-            deployment_id=AZURE_DEPLOYMENT,
+        response = ai_client.chat.completions.create(
+            model=AZURE_DEPLOYMENT,
             messages=[
                 {"role": "system", "content": "You are a network security analyzer."},
                 {"role": "user", "content": prompt}
