@@ -1,0 +1,11 @@
+# Azure OpenAI Configuration
+# Copy this file to .env and replace these values with your actual Azure OpenAI service details
+
+AZURE_ENDPOINT=https://your-resource-name.openai.azure.com/
+AZURE_KEY=your-api-key-here
+AZURE_DEPLOYMENT=your-deployment-name
+
+# Example:
+# AZURE_ENDPOINT=https://myai-resource.openai.azure.com/
+# AZURE_KEY=abcd1234efgh5678ijkl9012mnop3456
+# AZURE_DEPLOYMENT=gpt-35-turbo 

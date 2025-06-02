@@ -1,126 +1,218 @@
-# PacketMind
+# PacketMind - AI-Powered Deep Packet Inspection Tool 🚀
 
-PacketMind is an advanced Deep Packet Inspection (DPI) tool for Ubuntu that leverages an Azure AI LLM to identify suspicious network traffic in real time. It performs flow-level reassembly, caches results to minimize redundant AI calls, and processes classification concurrently using worker threads. PacketMind is designed for security analysts and network administrators who want to augment traditional rule-based DPI with AI-driven anomaly detection.
+PacketMind is a cutting-edge Deep Packet Inspection (DPI) tool that leverages Azure OpenAI to intelligently classify network traffic as suspicious or benign. It provides real-time threat detection, flow reassembly, and comprehensive analytics.
 
 ![PacketMind Logo](https://github.com/drhazemali/packetmind/blob/main/banner.png)
 
-## Features
+## ✨ Features
 
-- **Flow-level Reassembly**: Accumulates TCP payloads per flow for more accurate classification.
-- **AI-driven Classification**: Sends payload snippets to an Azure-hosted LLM to determine if traffic is suspicious.
-- **LRU Cache**: Caches payload results to reduce duplicate AI calls and save cost.
-- **Concurrent Processing**: Uses a thread pool to classify multiple flows in parallel.
-- **Idle Flow Timeout**: Periodically flushes flows that have been idle for a configurable duration.
-- **Configurable**: Adjust interface, BPF filter, timeouts, and thresholds via command-line arguments.
-- **Ubuntu Compatibility**: Tested on Ubuntu 22.04 LTS and newer (Python 3.10+).
-- **Rotating Logs**: Logs to both console and rotating log file for long-term retention.
+### Core Functionality
+- **AI-Powered Classification**: Uses Azure OpenAI LLM to analyze packet payloads
+- **Flow-Level Reassembly**: Accumulates TCP/UDP payloads per flow for better context
+- **Real-Time Processing**: Asynchronous classification with ThreadPoolExecutor
+- **Intelligent Caching**: LRU cache to avoid re-analyzing identical payloads
 
-## Repository Structure
+### Monitoring & Analytics
+- **Real-Time Statistics**: Live display of processing metrics
+- **Threat Export**: Automatic export to JSON and CSV formats
+- **Alert System**: Configurable thresholds for high-severity alerts
+- **Performance Metrics**: Cache hit rates, processing speeds, error tracking
 
+### Advanced Features
+- **Flow Timeout Management**: Automatic cleanup of idle flows
+- **Rotating Logs**: Configurable log file rotation
+- **Cross-Platform**: Works on Linux, macOS, and Windows
+- **Configurable Filters**: Custom BPF filters for targeted monitoring
+- **Graceful Shutdown**: Proper cleanup on exit signals
+
+## 🔧 Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- Administrator/root privileges (for packet capture)
+- Azure OpenAI service account
+
+### Install Dependencies
+```bash
+pip install -r requirements.txt
 ```
-packetmind/
-├── dpi_inspector.py      # Main DPI script
-├── requirements.txt      # Python dependencies
-├── .env.example          # Example environment variables file
-├── README.md             # This file
-├── LICENSE               # MIT License
-└── .gitignore            # Standard Git ignore patterns
+
+### Configure Azure OpenAI
+1. Copy the example environment file:
+   ```bash
+   cp env_example.txt .env
+   ```
+
+2. Edit `.env` with your Azure OpenAI credentials:
+   ```bash
+   AZURE_ENDPOINT=https://your-resource-name.openai.azure.com/
+   AZURE_KEY=your-api-key-here
+   AZURE_DEPLOYMENT=your-deployment-name
+   ```
+
+## 🚀 Usage
+
+### Basic Usage
+```bash
+# Linux/macOS (requires sudo)
+sudo python3 dpi_inspector.py --interface eth0
+
+# Windows (run as Administrator)
+python dpi_inspector.py --interface "Ethernet"
 ```
 
-## Prerequisites
-
-1. **Ubuntu 22.04 LTS (or newer)** with root privileges to capture packets.
-2. **Python 3.10+** installed.
-3. **Azure AI (OpenAI-compatible) resource** with a deployed LLM (e.g., `gpt-35-turbo`).
-4. **Network interface** in promiscuous mode if deploying on a dedicated capture device or using a TAP.
-
-## Installation
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/drhazemali/packetmind.git
-   cd packetmind
-   ```
-
-2. Create and activate a Python virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-
-3. Install Python dependencies:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-4. Copy `.env.example` to `.env` and fill in your Azure AI credentials:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env`:
-   ```text
-   AZURE_ENDPOINT=https://<your-resource>.openai.azure.com/
-   AZURE_KEY=<your-azure-api-key>
-   AZURE_DEPLOYMENT=<your-deployment-name>
-   ```
-
-## Usage
-
-Run PacketMind as root to capture and inspect live traffic:
-
+### Advanced Configuration
 ```bash
 sudo python3 dpi_inspector.py \
-  --interface <network-interface> \
-  --bpf "tcp port 80 or tcp port 443" \
-  --confidence-threshold 0.6 \
-  --flow-max-bytes 2048 \
-  --flow-timeout 60 \
-  --workers 4 \
-  --log-file packetmind.log
+    --interface eth0 \
+    --bpf "tcp port 443 or tcp port 80" \
+    --confidence-threshold 0.7 \
+    --flow-max-bytes 4096 \
+    --flow-timeout 120 \
+    --workers 8 \
+    --stats-interval 60 \
+    --alert-threshold 10 \
+    --export-json threats_$(date +%Y%m%d).json \
+    --export-csv threats_$(date +%Y%m%d).csv
 ```
 
-- `--interface`: Network interface to sniff on (e.g., `eth0`, `ens33`, `wlp2s0`).
-- `--bpf`: BPF filter to limit captured traffic (e.g., `"tcp port 80 or tcp port 443"`).
-- `--confidence-threshold`: Minimum AI confidence (0.0–1.0) to flag traffic as suspicious.
-- `--flow-max-bytes`: Bytes to accumulate per flow before forcing classification.
-- `--flow-timeout`: Seconds of inactivity before flushing a flow.
-- `--workers`: Number of threads to use for concurrent AI classification.
-- `--log-file`: Path to the rotating log file.
+## 📊 Command Line Options
 
-Example:
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--interface` | `-i` | **Required** | Network interface (eth0, en0, etc.) |
+| `--bpf` | `-f` | `tcp` | BPF filter for packet capture |
+| `--confidence-threshold` | `-c` | `0.6` | Minimum AI confidence for suspicious classification |
+| `--flow-max-bytes` | `-m` | `2048` | Max bytes per flow before classification |
+| `--flow-timeout` | `-t` | `60` | Flow inactivity timeout (seconds) |
+| `--workers` | `-w` | `4` | Number of classification worker threads |
+| `--log-file` | `-l` | `packetmind.log` | Log file path |
+| `--export-json` | `-j` | `threats.json` | JSON export file path |
+| `--export-csv` | `-e` | `threats.csv` | CSV export file path |
+| `--stats-interval` | `-s` | `30` | Statistics display interval (seconds) |
+| `--alert-threshold` | `-a` | `5` | Threat count for high-severity alerts |
+
+## 📈 Output and Exports
+
+### Real-Time Console Output
+```
+2024-01-15 10:30:25 - dpi_inspector - INFO - 🚀 Starting DPI Inspector on eth0 with filter: tcp
+2024-01-15 10:30:26 - dpi_inspector - WARNING - 🚨 SUSPICIOUS FLOW DETECTED: TCP:192.168.1.100:443-10.0.0.5:52341 (confidence: 0.85) - Potential C2 beacon pattern detected
+2024-01-15 10:30:56 - dpi_inspector - INFO - ✅ Benign flow: TCP:192.168.1.100:80-10.0.0.5:52342 (confidence: 0.92)
+
+============================================================
+📊 PACKETMIND STATISTICS (30.0s runtime)
+============================================================
+Packets processed:     1,245
+Total flows:           45
+Suspicious flows:      3
+Benign flows:          42
+Classification errors: 0
+Cache hits/misses:     128/45
+Cache hit rate:        74.0%
+Threats detected:      3
+============================================================
+```
+
+### JSON Export Format
+```json
+{
+  "export_time": "2024-01-15T10:31:00.123456",
+  "total_threats": 3,
+  "threats": [
+    {
+      "timestamp": "2024-01-15T10:30:26.789012",
+      "flow_key": "TCP:192.168.1.100:443-10.0.0.5:52341",
+      "confidence": 0.85,
+      "explanation": "Potential C2 beacon pattern detected",
+      "payload_size": 1024
+    }
+  ]
+}
+```
+
+### CSV Export Format
+```csv
+timestamp,flow_key,confidence,explanation,payload_size
+2024-01-15T10:30:26.789012,TCP:192.168.1.100:443-10.0.0.5:52341,0.85,Potential C2 beacon pattern detected,1024
+```
+
+## 🔍 BPF Filter Examples
+
+| Use Case | BPF Filter |
+|----------|------------|
+| HTTP/HTTPS only | `tcp port 80 or tcp port 443` |
+| DNS traffic | `udp port 53` |
+| SSH connections | `tcp port 22` |
+| Email protocols | `tcp port 25 or tcp port 110 or tcp port 143 or tcp port 993 or tcp port 995` |
+| Non-standard ports | `tcp portrange 8000-9000` |
+| Specific host | `host 192.168.1.100` |
+| Outbound only | `src net 192.168.0.0/16` |
+
+## 🛡️ Security Considerations
+
+- **Run with minimal privileges**: Only packet capture requires elevated privileges
+- **Secure API keys**: Protect your Azure OpenAI credentials
+- **Monitor resources**: AI classification can be resource-intensive
+- **Data privacy**: Be aware of what traffic you're analyzing
+- **Compliance**: Ensure monitoring complies with local regulations
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Permission denied when capturing packets:**
 ```bash
-sudo python3 dpi_inspector.py -i eth0 -f "tcp port 80 or tcp port 443" -c 0.6 -m 2048 -t 60 -w 4 -l packetmind.log
+# Linux
+sudo python3 dpi_inspector.py --interface eth0
+
+# Add user to group (alternative)
+sudo usermod -a -G wireshark $USER
 ```
 
-## Configuration Options
+**Interface not found:**
+```bash
+# List available interfaces
+ip link show                    # Linux
+ifconfig                       # macOS
+netsh interface show interface # Windows
+```
 
-- **FLOW_MAX_BYTES**: Defaults to 2048. Adjust if you want larger flow context before classification.
-- **FLOW_TIMEOUT**: Defaults to 60 seconds. Flows idle beyond this will be classified and removed.
-- **CONFIDENCE_THRESHOLD**: Defaults to 0.6. Lower to flag more flows as suspicious; raise to reduce false positives.
-- **WORKERS**: Number of concurrent threads for AI classification. Increase for higher throughput (requires more CPU).
-- **BPF Filter**: Customize BPF to inspect other protocols (e.g., `"udp port 53"` for DNS).
+**Azure OpenAI connection errors:**
+- Verify your `.env` file credentials
+- Check network connectivity to Azure
+- Ensure your deployment is active
+- Verify API key permissions
 
-## Alerting & Integration
+**High memory usage:**
+- Reduce `--flow-max-bytes`
+- Decrease `--workers` count
+- Use more specific BPF filters
+- Increase `--flow-timeout` for faster cleanup
 
-Currently, PacketMind logs suspicious flows to console and `packetmind.log`. You can extend `classify_and_alert()` in `dpi_inspector.py` to integrate with:
+## 📝 Log Files
 
-- **Email or SMS notifications** via SMTP or third-party APIs.
-- **SIEM platforms** (Splunk, Elastic, QRadar) by writing JSON alerts to a watched endpoint or file.
-- **Firewall automation** (e.g., using iptables or Azure NSG) to block suspicious IPs.
+PacketMind creates rotating log files with the following information:
+- All detected threats with full details
+- Processing statistics and performance metrics
+- Error messages and debugging information
+- Configuration and startup information
 
-## Contributing
+Log files rotate when they reach 5MB, keeping 3 backup files.
 
-Contributions are welcome! To contribute:
+## 🤝 Contributing
 
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m "Add your feature"`
-4. Push to branch: `git push origin feature/your-feature`
-5. Submit a Pull Request.
+Contributions are welcome! Please consider:
+- Bug reports and feature requests
+- Performance optimizations
+- Additional AI model integrations
+- Extended export formats
+- Enhanced threat detection patterns
 
-Please follow the existing code style and update tests (if any) accordingly.
+## 📄 License
 
-## License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+## ⚠️ Disclaimer
+
+PacketMind is intended for legitimate network security monitoring purposes only. Users are responsible for ensuring compliance with applicable laws and regulations. Always obtain proper authorization before monitoring network traffic.

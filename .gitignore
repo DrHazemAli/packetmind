@@ -16,8 +16,6 @@ venv/
 .vscode/
 .idea/
 
-# Requirements
-requirements.txt
 
 # Mac
 .DS_Store
